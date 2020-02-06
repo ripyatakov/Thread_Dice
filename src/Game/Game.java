@@ -8,55 +8,83 @@ public class Game {
     int minN = 2, maxN = 6; //players
     int minK = 2, maxK = 5; //dices
     int minM = 1, maxM = 100; //wins
-    private int n,m,k;
+
+    public int getN() {
+        return n;
+    }
+
+    public int getM() {
+        return m;
+    }
+
+    public int getK() {
+        return k;
+    }
+
+    private int n, m, k;
     private Player[] players;
     private Commentator commentator;
     Player lastPlayer;
-    public boolean gameIsOver(){
+
+    public boolean gameIsOver() {
         return (commentator.currentGameWinner.currentRoundsWin != maxM);
     }
-    private void CheckInput(int n, int k, int m){
+
+    private void CheckInput(int n, int k, int m) {
         if ((n < minN || n > maxN) ||
                 (k < minK || k > maxK) ||
-                (m < minM || m > maxM)){
+                (m < minM || m > maxM)) {
             throw new IllegalArgumentException("Wrong numbers in input :(");
         }
     }
-    public Game(String N, String K, String M){
+
+    public Game(String N, String K, String M) {
         System.out.println(N + K + M);
         n = Integer.parseInt(N);
         k = Integer.parseInt(K);
         m = Integer.parseInt(M);
-        CheckInput(n,k,m);
+        CheckInput(n, k, m);
         players = new Player[n];
         for (int i = 0; i < n; i++) {
-            players[i] = new Player(this,i);
+            players[i] = new Player(this, i);
         }
     }
 
-    public synchronized int throwDice() {
+    public synchronized int throwDice(Player player) {
         int answ = 0;
-        if (isChecked) {
-            Random rnd = new Random();
-            for (int i = 0; i < k; i++) {
-                answ = (rnd.nextInt(5)) + 1;
-            }
-            isChecked = false;
-            try {
-                wait();
-            } catch (InterruptedException exc){
-                exc.printStackTrace();
-            }
+        Random rnd = new Random();
+        for (int i = 0; i < k; i++) {
+            answ = (rnd.nextInt(5)) + 1;
         }
+        try {
+            wait();
+        } catch (InterruptedException exc) {
+            exc.printStackTrace();
+        }
+        lastPlayer = player;
+        isChecked = false;
         return answ;
     }
-    boolean isChecked = true;
+    void roundEnd(){
+        for (int i = 0; i < n; i++) {
+            players[i].roundEnd();
+        }
+    }
+    public boolean isChecked() {
+        return isChecked;
+    }
+
+    public void setChecked(boolean checked) {
+        isChecked = checked;
+    }
+
+    private boolean isChecked = true;
 
 
-    public void startGame(){
+    public void startGame() {
         Thread[] threads = new Thread[n];
         for (int i = 0; i < n; i++) {
-            threads[i] = new Thread(players[i],"Player " + i);
+            threads[i] = new Thread(players[i], "Player " + i);
 
         }
     }

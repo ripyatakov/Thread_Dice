@@ -16,8 +16,12 @@ public class Player implements Runnable {
     @Override
     public void run() {
         while (!game.gameIsOver()){
-            currentRoundScore = game.throwDice();
-            game.lastPlayer = this;
+            if (game.isChecked()) {
+                currentRoundScore = game.throwDice(this);
+            }
         }
+    }
+    void roundEnd(){
+        currentRoundScore = 0;
     }
 }
