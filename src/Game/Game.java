@@ -3,8 +3,9 @@ package Game;/*
  */
 
 import java.util.ArrayDeque;
-import java.util.LinkedList;
+import java.util.ArrayList;
 
+import java.util.Collections;
 import java.util.Random;
 
 public class Game {
@@ -27,7 +28,7 @@ public class Game {
     }
 
     private int n, m, k;
-    private Player[] players;
+    private ArrayList<Player> players;
     Commentator commentator;
     Player lastPlayer;
     Player currentRoundWinner;
@@ -43,23 +44,22 @@ public class Game {
         if ((n < minN || n > maxN) ||
                 (k < minK || k > maxK) ||
                 (m < minM || m > maxM)) {
-            throw new IllegalArgumentException("Wrong numbers in input :(");
+            throw new IllegalArgumentException("Wrong input :(");
         }
     }
 
     public Game(String N, String K, String M) {
-        System.out.println(N + K + M);
         n = Integer.parseInt(N);
         k = Integer.parseInt(K);
         m = Integer.parseInt(M);
         CheckInput(n, k, m);
-        players = new Player[n];
+        players = new ArrayList<Player>();
         for (int i = 0; i < n; i++) {
-            players[i] = new Player(this, i);
+            players.add(new Player(this, i));
         }
-        commentator = new Commentator(this, players[0]);
-        currentGameWinner = players[0];
-        currentRoundWinner = players[0];
+        commentator = new Commentator(this, players.get(0));
+        currentGameWinner = players.get(0);
+        currentRoundWinner = players.get(0);
     }
 
     public synchronized int throwDice(Player player) {
@@ -111,10 +111,11 @@ public class Game {
         }
         if (currentRoundWinner.currentRoundsWin != getM()) {
             gameJournal.addLast("Раунд закончился, победил: " + currentRoundWinner + " со счетом " + currentRoundWinner.currentRoundScore +"" +
-                    " выиграл игр "+currentRoundWinner.currentRoundsWin + "\nЛидер " +
-                    "" + currentGameWinner + " " + (currentGameWinner.currentRoundsWin) + "\n");
+                    " всего побед "+currentRoundWinner.currentRoundsWin + "\nЛидер " +
+                    "" + currentGameWinner + " - " + (currentGameWinner.currentRoundsWin) + " победы\n");
         } else {
-            gameJournal.addLast("Раунд закончился, победил: " + currentRoundWinner);
+            gameJournal.addLast("Раунд закончился, победил: " + currentRoundWinner + " со счетом " + currentRoundWinner.currentRoundScore +"" +
+                    " всего побед "+currentRoundWinner.currentRoundsWin);
         }
         playersPlayed = 0;
         synchronized (commentator) {
@@ -124,24 +125,11 @@ public class Game {
             gameIsOver = true;
         }
         for (int i = 0; i < n; i++) {
-            players[i].roundEnd();
+            players.get(i).roundEnd();
         }
         for (int i = 0; i < n; i++) {
-            synchronized (players[i]) {
-                players[i].notifyAll();
-            }
-        }
-    }
-
-    public String strToJournal(boolean isEnd, Player player, int score) {
-        if (isEnd) {
-            return "Раунд закончился, победил: " + currentRoundWinner + " Лидер " +
-                    "" + currentGameWinner + " " + (currentGameWinner.currentRoundsWin);
-        } else {
-            if (playersPlayed == getN()) {
-                return player + " набрал " + score;
-            } else {
-                return player + " набрал " + score + " лидирует " + currentRoundWinner;
+            synchronized (players.get(i)) {
+                players.get(i).notifyAll();
             }
         }
     }
@@ -150,10 +138,15 @@ public class Game {
         Thread[] threads = new Thread[n];
 
         for (int i = 0; i < n; i++) {
-            threads[i] = new Thread(players[i], "Player " + i);
+            threads[i] = new Thread(players.get(i), "Player " + i);
             threads[i].start();
         }
         Thread commentatorThread = new Thread(commentator, "Commentator");
         commentatorThread.start();
+    }
+
+    public ArrayList<Player> sortedPlayers(){
+        Collections.sort(players);
+        return players;
     }
 }

@@ -4,13 +4,13 @@ package Game;/*
 
 public class main {
     public static void main(String[] args) {
-        String sN,sK,sM;
         try{
             Game game = new Game(args[0],args[1],args[2]);
+
             game.startGame();
         }
         catch (Exception exc){
-
+            System.out.println("Неверный ввод данных...");
         }
     }
 }

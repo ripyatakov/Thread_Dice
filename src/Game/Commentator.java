@@ -3,6 +3,8 @@
  */
 package Game;
 
+import java.util.ArrayList;
+
 public class Commentator implements Runnable {
 
     int maxScore = 0;
@@ -30,7 +32,12 @@ public class Commentator implements Runnable {
                 }
             }
         }
-
+        System.out.println("Поздравляю победителя " + game.currentGameWinner);
+        ArrayList<Player> players = game.sortedPlayers();
+        int place = 0;
+        for (var a:players) {
+            System.out.println(++place + " место " + a + " побед " + a.currentRoundsWin);
+        }
     }
 
 }

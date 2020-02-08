@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="185_Pyatakov_R_HW3:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/185_Pyatakov_R_HW3_jar</output-path>
+    <root id="archive" name="185_Pyatakov_R_HW3.jar">
+      <element id="module-output" name="185_Pyatakov_R_HW3" />
+    </root>
+  </artifact>
+</component>

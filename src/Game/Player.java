@@ -3,7 +3,7 @@
  */
 package Game;
 
-public class Player implements Runnable {
+public class Player implements Runnable, Comparable<Player> {
     Game game;
     int currentRoundScore = 0;
     int currentRoundsWin = 0;
@@ -40,5 +40,15 @@ public class Player implements Runnable {
 
     public String toString() {
         return ("Игрок №_" + (id+1));
+    }
+
+
+    @Override
+    public int compareTo(Player o) {
+        if (this.currentRoundsWin > o.currentRoundsWin)
+            return -1;
+        if (this.currentRoundsWin == o.currentRoundsWin)
+            return 0;
+        return 1;
     }
 }
