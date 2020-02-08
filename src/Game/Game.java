@@ -2,12 +2,17 @@ package Game;/*
  * Created by Pyatakov Roman BPI 185 on 06.02.2020
  */
 
+import java.util.ArrayDeque;
+import java.util.LinkedList;
+
 import java.util.Random;
 
 public class Game {
+    ArrayDeque<String> gameJournal = new ArrayDeque<>();
     int minN = 2, maxN = 6; //players
     int minK = 2, maxK = 5; //dices
     int minM = 1, maxM = 100; //wins
+    private Random rnd = new Random();
 
     public int getN() {
         return n;
@@ -23,11 +28,15 @@ public class Game {
 
     private int n, m, k;
     private Player[] players;
-    private Commentator commentator;
+    Commentator commentator;
     Player lastPlayer;
+    Player currentRoundWinner;
+    Player currentGameWinner;
+
+    private boolean gameIsOver = false;
 
     public boolean gameIsOver() {
-        return (commentator.currentGameWinner.currentRoundsWin != maxM);
+        return gameIsOver;
     }
 
     private void CheckInput(int n, int k, int m) {
@@ -48,44 +57,103 @@ public class Game {
         for (int i = 0; i < n; i++) {
             players[i] = new Player(this, i);
         }
+        commentator = new Commentator(this, players[0]);
+        currentGameWinner = players[0];
+        currentRoundWinner = players[0];
     }
 
     public synchronized int throwDice(Player player) {
-        int answ = 0;
-        Random rnd = new Random();
-        for (int i = 0; i < k; i++) {
-            answ = (rnd.nextInt(5)) + 1;
+        playersPlayed++;
+        if (fastFinish) {
+            player.setWait(true);
+            if (playersPlayed == n) {
+                roundEnd();
+            }
+            return 0;
         }
-        try {
-            wait();
-        } catch (InterruptedException exc) {
-            exc.printStackTrace();
+        int answ = 0;
+        for (int i = 0; i < k; i++) {
+            answ += (rnd.nextInt(6)) + 1;
         }
         lastPlayer = player;
-        isChecked = false;
+        if (answ > currentRoundWinner.currentRoundScore) {
+            currentRoundWinner = player;
+        }
+        if (playersPlayed == getN() || answ == k * 6) {
+            gameJournal.addLast(player + " набрал " + answ);
+        } else {
+            gameJournal.addLast(player + " набрал " + answ + " лидирует " + currentRoundWinner);
+        }
+        //gameJournal.addLast(strToJournal(false,player,answ));
+        synchronized (commentator) {
+            commentator.notify();
+        }
+        player.setWait(true);
+        if (answ == 6 * k) {
+            fastFinish = true;
+        }
+        if (playersPlayed >= getN()) {
+            playersPlayed = n;
+            player.setWait(false);
+            roundEnd();
+        }
         return answ;
     }
-    void roundEnd(){
+
+    int playersPlayed = 0;
+    boolean fastFinish = false;
+
+    synchronized void roundEnd() {
+        fastFinish = false;
+        currentRoundWinner.currentRoundsWin++;
+        if (currentRoundWinner.currentRoundsWin > currentGameWinner.currentRoundsWin) {
+            currentGameWinner = currentRoundWinner;
+        }
+        if (currentRoundWinner.currentRoundsWin != getM()) {
+            gameJournal.addLast("Раунд закончился, победил: " + currentRoundWinner + " со счетом " + currentRoundWinner.currentRoundScore +"" +
+                    " выиграл игр "+currentRoundWinner.currentRoundsWin + "\nЛидер " +
+                    "" + currentGameWinner + " " + (currentGameWinner.currentRoundsWin) + "\n");
+        } else {
+            gameJournal.addLast("Раунд закончился, победил: " + currentRoundWinner);
+        }
+        playersPlayed = 0;
+        synchronized (commentator) {
+            commentator.notify();
+        }
+        if (currentGameWinner.currentRoundsWin >= m) {
+            gameIsOver = true;
+        }
         for (int i = 0; i < n; i++) {
             players[i].roundEnd();
         }
-    }
-    public boolean isChecked() {
-        return isChecked;
-    }
-
-    public void setChecked(boolean checked) {
-        isChecked = checked;
+        for (int i = 0; i < n; i++) {
+            synchronized (players[i]) {
+                players[i].notifyAll();
+            }
+        }
     }
 
-    private boolean isChecked = true;
-
+    public String strToJournal(boolean isEnd, Player player, int score) {
+        if (isEnd) {
+            return "Раунд закончился, победил: " + currentRoundWinner + " Лидер " +
+                    "" + currentGameWinner + " " + (currentGameWinner.currentRoundsWin);
+        } else {
+            if (playersPlayed == getN()) {
+                return player + " набрал " + score;
+            } else {
+                return player + " набрал " + score + " лидирует " + currentRoundWinner;
+            }
+        }
+    }
 
     public void startGame() {
         Thread[] threads = new Thread[n];
+
         for (int i = 0; i < n; i++) {
             threads[i] = new Thread(players[i], "Player " + i);
-
+            threads[i].start();
         }
+        Thread commentatorThread = new Thread(commentator, "Commentator");
+        commentatorThread.start();
     }
 }

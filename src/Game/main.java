@@ -7,6 +7,7 @@ public class main {
         String sN,sK,sM;
         try{
             Game game = new Game(args[0],args[1],args[2]);
+            game.startGame();
         }
         catch (Exception exc){
 
